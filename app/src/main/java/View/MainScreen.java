@@ -4,8 +4,18 @@
  */
 package View;
 
+import Controller.ProjectsController;
+import Controller.TasksController;
+import Model.Projects;
+import Model.Tasks;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.List;
+import javax.swing.DefaultListModel;
+import javax.swing.JOptionPane;
+import util.TaskTableModel;
 
 /**
  *
@@ -13,12 +23,17 @@ import java.awt.Font;
  */
 public class MainScreen extends javax.swing.JFrame {
 
-    /**
-     * Creates new form Main
-     */
+  ProjectsController projectsController;
+  TasksController tasksController;
+  
+  DefaultListModel projectsModel;
+  TaskTableModel tasksModel;
+  
     public MainScreen() {
         initComponents();
         decorateTableTasks();
+        initDataController();
+        initComponentsModel();
     }
 
     /**
@@ -194,11 +209,6 @@ public class MainScreen extends javax.swing.JFrame {
         jPanel4.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         listaProjetos.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        listaProjetos.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         listaProjetos.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         listaProjetos.setFixedCellHeight(40);
         listaProjetos.setSelectionBackground(new java.awt.Color(0, 51, 255));
@@ -251,6 +261,7 @@ public class MainScreen extends javax.swing.JFrame {
             }
         });
         tabelaTasks.setRowHeight(40);
+        tabelaTasks.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         tabelaTasks.setShowHorizontalLines(true);
         tabelaTasks.setShowVerticalLines(true);
         ScrollPaneTalsks.setViewportView(tabelaTasks);
@@ -309,10 +320,25 @@ public class MainScreen extends javax.swing.JFrame {
     private void jLabelProjectMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelProjectMouseClicked
         ProjectDialogScreen projectDialogScreen = new ProjectDialogScreen(this, true);
         projectDialogScreen.setVisible(true);
+        
+        projectDialogScreen.addWindowListener(new WindowAdapter() {
+            public void windowClosed(WindowEvent e) {
+                loadProjects();
+            }
+        });
     }//GEN-LAST:event_jLabelProjectMouseClicked
 
     private void jLabelAddTarefaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelAddTarefaMouseClicked
         
+       
+            TaskDialogScreen taskDialogScreen = new TaskDialogScreen();
+
+           
+
+           // taskDialogScreen.setProject(project);
+            taskDialogScreen.setVisible(true);
+
+            
     }//GEN-LAST:event_jLabelAddTarefaMouseClicked
 
     /**
@@ -382,6 +408,48 @@ public void decorateTableTasks(){
     tabelaTasks.getTableHeader().setForeground(new Color (255, 255, 255));
     tabelaTasks.setAutoCreateRowSorter(true);
 }
+  public void initDataController() {
+        projectsController  = new ProjectsController();
+        tasksController= new TasksController();
+    }
+  
+  public void loadProjects() {
+        List<Projects> projects =  projectsController.getAll();
 
+        projectsModel.clear();
+
+        for (int i = 0; i < projects.size(); i++) {
+            projectsModel.addElement(projects.get(i));
+        }
+        listaProjetos.setModel(projectsModel);
+    }
+  
+    private void loadTasks(int projectId) {
+        List<Tasks> tasks = tasksController.getAll(projectId);
+
+        tasksModel.setTasks(tasks);
+        showJTableTasks(!tasks.isEmpty());
+    }
+  
+    public void initComponentsModel() {
+        projectsModel = new DefaultListModel();
+        loadProjects();
+        loadTasks(1);
+        tasksModel = new TaskTableModel();
+        tabelaTasks.setModel(tasksModel);
+        tabelaTasks.getColumnModel().getColumn(2).setCellRenderer(new StatusColumnCellRenderer());
+        tabelaTasks.getColumnModel().getColumn(4).setCellRenderer(new ButtonColumnCellRederer("edit"));
+        tabelaTasks.getColumnModel().getColumn(5).setCellRenderer(new ButtonColumnCellRederer("delete"));
+
+        if (!projectsModel.isEmpty()) {
+            listaProjetos.setSelectedIndex(0);
+            int projectIndex = listaProjetos.getSelectedIndex();
+            Projects project = (Projects) projectsModel.get(projectIndex);
+            loadTasks(project.getId());
+        }
+
+    }
+    
+    
 
 }
